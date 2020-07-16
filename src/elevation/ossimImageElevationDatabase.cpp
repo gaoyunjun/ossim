@@ -437,8 +437,14 @@ bool ossimImageElevationDatabase::loadMapFromKwl()
       ossimFilename f = m_connectionString;
       f = f.dirCat( ossimFilename(ELEV_CELL_MAP ) );
       if ( f.exists() )
-      {
+      {         
          ossimKeywordlist kwl;
+         //---
+         // If $(env_var_name) is found in the preferences file, expand it in
+         // place.
+         //---
+         kwl.setExpandEnvVarsFlag( true );
+
          if ( kwl.addFile( f ) == true )
          {
             ossimString regExp = "elev_cell[0-9]*\\.file";
