@@ -21,7 +21,7 @@
 #include <cmath>
 #include <ostream>
 
-#define TRACE_TIME 0 /* For function level time stats. */
+#define TRACE_TIME 1 /* For function level time stats. */
 #if TRACE_TIME
 #  include <ossim/base/ossimStopwatch.h>
 #endif
@@ -67,7 +67,7 @@ bool ossimImageElevationDatabase::open(const ossimString& connectionString)
    {
       m_connectionString = connectionString.c_str();
 
-      if ( loadMapFromKwl() == false )
+      if (  m_entryMap.size() == 0 && loadMapFromKwl() == false )
       {
          loadFileMap();
       }
@@ -99,6 +99,11 @@ void ossimImageElevationDatabase::close()
 
 double ossimImageElevationDatabase::getHeightAboveMSL(const ossimGpt& gpt)
 {
+#if TRACE_TIME
+   ossimStopwatch sw;
+   sw.start();
+#endif
+
    double h = ossim::nan();
    if(isSourceEnabled())
    {
@@ -111,6 +116,16 @@ double ossimImageElevationDatabase::getHeightAboveMSL(const ossimGpt& gpt)
          // m_meanSpacing = handler->getMeanSpacingMeters();
       }
    }
+
+#if TRACE_TIME
+   sw.stop();
+
+   ossimNotify(ossimNotifyLevel_NOTICE)
+         << "ossimImageElevationDatabase::getHeightAboveMSL() time in seconds: "
+         << std::fixed << std::setprecision(8) << sw.count()
+         << "\ncell_map_size: " << m_entryMap.size() << "\n";
+
+#endif
 
    return h;
 }
@@ -384,7 +399,7 @@ bool ossimImageElevationDatabase::loadState(const ossimKeywordlist& kwl, const c
 
          if ( result )
          {
-            if ( loadMapFromKwl() == false )
+            if (  m_entryMap.size() == 0 && loadMapFromKwl() == false )
             {
                loadFileMap();
             }
@@ -432,7 +447,7 @@ bool ossimImageElevationDatabase::loadMapFromKwl()
 #endif
 
    bool result = false;
-   if ( m_connectionString.size() )
+   if (  m_entryMap.size() == 0 && m_connectionString.size() )
    {
       ossimFilename f = m_connectionString;
       f = f.dirCat( ossimFilename(ELEV_CELL_MAP ) );
@@ -480,7 +495,9 @@ bool ossimImageElevationDatabase::loadMapFromKwl()
    sw.stop();
    ossimNotify(ossimNotifyLevel_NOTICE)
       << "ossimImageElevationDatabase::loadMapFromKwl() time in seconds: "
-      << std::fixed << std::setprecision(8) << sw.count() << "\n";
+      << std::fixed << std::setprecision(8) << sw.count()
+      << "\ncell_map_size: " << m_entryMap.size() << "\n";
+
 #endif 
 
    return result;
